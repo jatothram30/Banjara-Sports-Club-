@@ -15,7 +15,15 @@ jobs:
       - name: Extract app source
         run: |
           unzip -o "Banjara_Sports_Club_App_Prototype(1).zip" -d app-source
-          ls -R app-source
+          INDEX_FILE=$(find app-source -type f -name index.html -print -quit)
+          if [ -z "$INDEX_FILE" ]; then
+            echo "index.html not found in ZIP"
+            exit 1
+          fi
+          APP_DIR=$(dirname "$INDEX_FILE")
+          echo "APP_DIR=$APP_DIR" >> "$GITHUB_ENV"
+          echo "Found app at: $APP_DIR"
+          ls -la "$APP_DIR"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,8 +37,11 @@ jobs:
           java-version: 21
 
       - name: Prepare Capacitor
-        working-directory: app-source/banjara_sports_club_app
         run: |
+          cd "$APP_DIR"
+          test -f manifest.json
+          test -f sw.js
+          test -f logo.png
           npm init -y
           npm install @capacitor/core@^7 @capacitor/cli@^7 @capacitor/android@^7
           mkdir -p www
@@ -38,8 +49,8 @@ jobs:
           npx cap init "Banjara Sports Club" "com.banjarasportsclub.app" --web-dir www
 
       - name: Build Android APK
-        working-directory: app-source/banjara_sports_club_app
         run: |
+          cd "$APP_DIR"
           npx cap add android
           npx cap sync android
           cd android
@@ -50,4 +61,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Banjara-Sports-Club-APK
-          path: app-source/banjara_sports_club_app/android/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.APP_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk
