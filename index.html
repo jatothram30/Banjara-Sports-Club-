@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080808"><title>Banjara Sports Club</title>
+<style>
+:root{--gold:#d6ad48;--bg:#090909;--panel:#171717;--muted:#aaa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font:16px system-ui,Arial}
+header{padding:22px 16px;text-align:center;background:linear-gradient(145deg,#050505,#252016);border-bottom:1px solid #6e5726}
+.crest{width:74px;height:74px;margin:auto auto 8px;border:2px solid var(--gold);border-radius:18px;display:grid;place-items:center;color:var(--gold);font-size:34px}
+h1{font-size:22px;margin:5px;color:var(--gold);letter-spacing:1px}header p{margin:4px;color:#ddd;font-size:12px;letter-spacing:2px}
+main{max-width:680px;margin:auto;padding:16px}.card{background:var(--panel);border:1px solid #393126;border-radius:16px;padding:16px;margin:14px 0}
+h2{font-size:17px;color:var(--gold);margin:0 0 12px}.score{font-size:42px;font-weight:800;text-align:center}.overs{text-align:center;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.grid button,.actions button{background:#26221a;color:#fff;border:1px solid #705a2b;border-radius:12px;padding:13px;font-size:16px;font-weight:700}
+button:active{transform:scale(.97)}.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:10px}
+button.primary{background:var(--gold);color:#111;border:0}.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.small{font-size:13px;color:var(--muted)}#history{white-space:pre-wrap;line-height:1.7;color:#ddd}
+footer{text-align:center;color:#777;padding:20px;font-size:12px}
+</style></head>
+<body>
+<header><div class="crest">🏏</div><h1>BANJARA SPORTS CLUB</h1><p>PLAY • COMPETE • WIN</p></header>
+<main>
+<section class="card"><h2>Live Score</h2><div class="score"><span id="runs">0</span>/<span id="wkts">0</span></div><div class="overs">Overs: <span id="overs">0.0</span></div>
+<div class="row small" style="margin-top:12px"><span id="bat">Batting: Team A</span><span id="target"></span></div></section>
+<section class="card"><h2>Ball-by-ball scoring</h2><div class="grid">
+<button onclick="add(0)">0</button><button onclick="add(1)">1</button><button onclick="add(2)">2</button>
+<button onclick="add(3)">3</button><button onclick="add(4)">4</button><button onclick="add(6)">6</button>
+</div><div class="actions">
+<button onclick="extra('WD')">Wide</button><button onclick="extra('NB')">No Ball</button>
+<button onclick="extra('B')">Byes</button><button onclick="extra('LB')">Leg Byes</button>
+<button onclick="wicket()">Wicket</button><button onclick="undo()">Undo</button>
+</div><div class="actions"><button class="primary" onclick="newInnings()">Reset innings</button><button onclick="toggleStrike()">Change strike</button></div>
+</section>
+<section class="card"><div class="row"><h2>Ball history</h2><span class="small" id="balls">0 legal balls</span></div><div id="history">No balls recorded yet.</div></section>
+</main><footer>Banjara Sports Club • Cricket scoring starter</footer>
+<script>
+let s={r:0,w:0,b:0,log:[],strike:0};
+function render(){document.getElementById('runs').textContent=s.r;document.getElementById('wkts').textContent=s.w;document.getElementById('overs').textContent=Math.floor(s.b/6)+'.'+s.b%6;document.getElementById('balls').textContent=s.b+' legal balls';document.getElementById('history').textContent=s.log.length?s.log.slice().reverse().join('\n'):'No balls recorded yet.'}
+function save(label,r=0,legal=true,w=0){s.log.push(label);s.r+=r;s.w+=w;if(legal)s.b++;render()}
+function add(n){save(String(n),n,true);if(n%2)s.strike^=1}
+function extra(t){let n=1;if(t==='B'||t==='LB'){let v=prompt(t==='B'?'Byes?':'Leg byes?','1');if(v===null)return;n=Math.max(0,parseInt(v)||0);save(t+' '+n,n,true);return}save(t,t==='WD'||t==='NB'?1:0,false)}
+function wicket(){if(s.w>=10)return;save('W',0,true,1)}
+function undo(){if(!s.log.length)return;let label=s.log.pop();if(label==='W')s.w--;else if(label==='WD'||label==='NB')s.r--;else if(label.startsWith('B ')||label.startsWith('LB ')){let n=parseInt(label.split(' ')[1])||0;s.r-=n;s.b--}else{let n=parseInt(label)||0;s.r-=n;s.b--;};s.b=Math.max(0,s.b);s.r=Math.max(0,s.r);render()}
+function newInnings(){if(!confirm('Reset this innings?'))return;s={r:0,w:0,b:0,log:[],strike:0};render()}
+function toggleStrike(){s.strike^=1;alert('Strike changed (manual selection can be added in the full scorer screen).')}
+render();
+</script></body></html>
