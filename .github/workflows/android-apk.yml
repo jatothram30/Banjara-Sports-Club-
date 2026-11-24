@@ -7,7 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -15,15 +14,31 @@ jobs:
       - name: Extract app source
         run: |
           unzip -o "Banjara_Sports_Club_App_Prototype(1).zip" -d app-source
-          INDEX_FILE=$(find app-source -type f -name index.html -print -quit)
-          if [ -z "$INDEX_FILE" ]; then
-            echo "index.html not found in ZIP"
+          MANIFEST=$(find app-source -type f -name manifest.json -print -quit)
+          if [ -z "$MANIFEST" ]; then
+            echo "manifest.json not found"
+            find app-source -maxdepth 5 -type f
             exit 1
           fi
-          APP_DIR=$(dirname "$INDEX_FILE")
+          DIR=$(dirname "$MANIFEST")
+          if [ "$(basename "$DIR")" = "www" ]; then
+            APP_DIR=$(dirname "$DIR")
+          else
+            APP_DIR="$DIR"
+          fi
+          mkdir -p "$APP_DIR/www"
+          for FILE in index.html manifest.json sw.js logo.png; do
+            SOURCE=$(find app-source -type f -name "$FILE" -print -quit)
+            if [ -z "$SOURCE" ]; then
+              echo "$FILE not found"
+              exit 1
+            fi
+            TARGET="$APP_DIR/www/$FILE"
+            if [ "$SOURCE" != "$TARGET" ]; then
+              cp "$SOURCE" "$TARGET"
+            fi
+          done
           echo "APP_DIR=$APP_DIR" >> "$GITHUB_ENV"
-          echo "Found app at: $APP_DIR"
-          ls -la "$APP_DIR"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -39,13 +54,8 @@ jobs:
       - name: Prepare Capacitor
         run: |
           cd "$APP_DIR"
-          test -f manifest.json
-          test -f sw.js
-          test -f logo.png
           npm init -y
           npm install @capacitor/core@^7 @capacitor/cli@^7 @capacitor/android@^7
-          mkdir -p www
-          cp index.html manifest.json sw.js logo.png www/
           npx cap init "Banjara Sports Club" "com.banjarasportsclub.app" --web-dir www
 
       - name: Build Android APK
@@ -62,3 +72,4 @@ jobs:
         with:
           name: Banjara-Sports-Club-APK
           path: ${{ env.APP_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk
+          
