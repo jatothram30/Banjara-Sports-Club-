@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -14,31 +15,15 @@ jobs:
       - name: Extract app source
         run: |
           unzip -o "Banjara_Sports_Club_App_Prototype(1).zip" -d app-source
-          MANIFEST=$(find app-source -type f -name manifest.json -print -quit)
-          if [ -z "$MANIFEST" ]; then
-            echo "manifest.json not found"
+          CONFIG=$(find app-source -type f -name capacitor.config.json -print -quit)
+          if [ -z "$CONFIG" ]; then
+            echo "capacitor.config.json not found"
             find app-source -maxdepth 5 -type f
             exit 1
           fi
-          DIR=$(dirname "$MANIFEST")
-          if [ "$(basename "$DIR")" = "www" ]; then
-            APP_DIR=$(dirname "$DIR")
-          else
-            APP_DIR="$DIR"
-          fi
-          mkdir -p "$APP_DIR/www"
-          for FILE in index.html manifest.json sw.js logo.png; do
-            SOURCE=$(find app-source -type f -name "$FILE" -print -quit)
-            if [ -z "$SOURCE" ]; then
-              echo "$FILE not found"
-              exit 1
-            fi
-            TARGET="$APP_DIR/www/$FILE"
-            if [ "$SOURCE" != "$TARGET" ]; then
-              cp "$SOURCE" "$TARGET"
-            fi
-          done
+          APP_DIR=$(dirname "$CONFIG")
           echo "APP_DIR=$APP_DIR" >> "$GITHUB_ENV"
+          ls -la "$APP_DIR"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,12 +36,11 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Prepare Capacitor
+      - name: Install dependencies
         run: |
           cd "$APP_DIR"
-          npm init -y
-          npm install @capacitor/core@^7 @capacitor/cli@^7 @capacitor/android@^7
-          npx cap init "Banjara Sports Club" "com.banjarasportsclub.app" --web-dir www
+          npm install
+          npm install @capacitor/android@^7
 
       - name: Build Android APK
         run: |
